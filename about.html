@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解決コンパス — 機能紹介</title>
+<meta name="description" content="問題解決を「定義→原因→発想→選択→計画→ふりかえり」の6ステップの型で最後まで回すアプリ。毎日5分のお題ドリルと、ステップ別の充実度・称号で問題解決力の伸びを見える化します。">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="解決コンパス — 機能紹介">
+<meta property="og:image" content="https://kaiketsu-compass.vercel.app/ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c1: #1abc9c;
+    --c2: #16a085;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: #1a1a1a;
+    color: #ececec;
+    line-height: 1.7;
+  }
+  a { color: inherit; text-decoration: none; }
+  .topbar {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px 20px 0;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #9a9a9a;
+    transition: color .15s ease;
+  }
+  .back-link:hover { color: #fff; }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--c1);
+    margin: 24px 20px 0;
+    border-radius: 24px;
+    padding: 64px 24px;
+    text-align: center;
+  }
+  .hero::before, .hero::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0.07;
+    filter: blur(10px);
+  }
+  .hero::before { width: 240px; height: 240px; top: -80px; left: -60px; }
+  .hero::after { width: 300px; height: 300px; bottom: -120px; right: -80px; }
+  .badge {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--c1);
+    box-shadow: 0 0 0 14px rgba(255,255,255,0.14);
+  }
+  .category-pill {
+    position: relative;
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    position: relative;
+    margin: 0 0 12px;
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 800;
+    color: #fff;
+  }
+  .hero p.tagline {
+    position: relative;
+    margin: 0 auto 32px;
+    max-width: 520px;
+    font-size: 17px;
+    color: rgba(255,255,255,0.88);
+  }
+  .cta {
+    position: relative;
+    display: inline-block;
+    background: #fff;
+    color: #1a1a1a;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 36px;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    transition: transform .15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); }
+
+  .features {
+    max-width: 880px;
+    margin: 56px auto 0;
+    padding: 0 20px;
+  }
+  .features h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 24px;
+    color: #fff;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .feature-card {
+    background: #182825;
+    border: 1px solid #22403a;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .feature-icon {
+    color: var(--c1);
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+  .feature-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: #fff;
+  }
+  .feature-desc {
+    font-size: 14px;
+    color: #b2cbc4;
+    margin: 0;
+  }
+
+  .steps {
+    max-width: 880px;
+    margin: 40px auto 0;
+    padding: 0 20px;
+  }
+  .steps h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 20px;
+    color: #fff;
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-top: 1px solid #1f3a34;
+  }
+  .step:first-of-type { border-top: 0; }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--c1);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step p { margin: 0; font-size: 14px; color: #d0e2dd; }
+  .step strong { color: #fff; }
+
+  .note {
+    max-width: 880px;
+    margin: 24px auto 0;
+    padding: 0 20px;
+    font-size: 13px;
+    color: #8aa39c;
+  }
+
+  .footer-cta {
+    max-width: 880px;
+    margin: 56px auto 0;
+    padding: 0 20px 64px;
+    text-align: center;
+  }
+  .footer-cta .cta {
+    background: var(--c1);
+    color: #fff;
+    box-shadow: none;
+  }
+  .footer-links {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #8aa39c;
+  }
+  .footer-links a { color: #9a9a9a; }
+  .footer-links a:hover { color: #fff; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back-link" href="https://apps.yuji-nakamura.com/">← アプリ一覧に戻る</a>
+  </div>
+
+  <section class="hero">
+    <span class="category-pill">学び・成長</span>
+    <div class="badge"><svg width="72" height="72" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="22"/><path d="M40 24 L35 35 L24 40 L29 29 Z"/><path d="M32 14 V18"/><path d="M32 46 V50"/><path d="M14 32 H18"/><path d="M46 32 H50"/></svg></div>
+    <h1>解決コンパス</h1>
+    <p class="tagline">迷ったら、型に戻ろう。問題を「定義→原因→発想→選択→計画→ふりかえり」の6ステップで最後まで解き切り、毎日の稽古で問題解決力を伸ばすアプリです。</p>
+    <a class="cta" href="https://kaiketsu-compass.vercel.app">アプリを使ってみる →</a>
+  </section>
+
+  <section class="features">
+    <h2>できること</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10 H40 L50 20 V54 H16 Z"/><path d="M40 10 V20 H50"/><path d="M24 30 H42"/><path d="M24 38 H42"/><path d="M24 46 H34"/></svg></div>
+        <h3 class="feature-title">6ステップの解決シート</h3>
+        <p class="feature-desc">本物の問題を1件登録し、「問題を定義する → なぜなぜ分析 → 打ち手を出す → 評価して選ぶ → 行動計画 → ふりかえり」の順に、ガイドに沿って埋めていきます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="28" cy="28" r="16"/><path d="M40 40 L54 54"/><path d="M28 20 V30"/><circle cx="28" cy="36" r="1.6" fill="currentColor" stroke="none"/></svg></div>
+        <h3 class="feature-title">なぜなぜ分析で根本原因へ</h3>
+        <p class="feature-desc">前の答えを受けて「なぜ？」を自動で問いかけ。表面の症状から、自分で手を打てる根本原因まで掘り下げます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 10 C22 10 16 18 16 26 C16 33 21 37 24 41 V46 H40 V41 C43 37 48 33 48 26 C48 18 42 10 32 10 Z"/><path d="M26 52 H38"/></svg></div>
+        <h3 class="feature-title">打ち手を出して、選ぶ</h3>
+        <p class="feature-desc">「やめる・減らす・人に頼む」などの視点をヒントに打ち手を数多く出し、効果と手間で評価。おすすめを見ながら「これでいく」を決めます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="14" width="44" height="40" rx="6"/><path d="M10 26 H54"/><path d="M22 8 V18"/><path d="M42 8 V18"/><path d="M22 40 L28 46 L42 34"/></svg></div>
+        <h3 class="feature-title">期限つきの行動計画</h3>
+        <p class="feature-desc">選んだ打ち手を期限つきの行動に分けてチェック。期限切れの行動は一覧でもひと目でわかります。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12 H44"/><path d="M20 52 H44"/><path d="M22 12 C22 26 42 26 42 32 C42 38 22 38 22 52"/><path d="M42 12 C42 26 22 26 22 32"/></svg></div>
+        <h3 class="feature-title">毎日5分の稽古</h3>
+        <p class="feature-desc">「会議が長い」「朝起きられない」などのお題に、原因と打ち手を書く短い練習。お題は日替わりで、別のお題にも変えられます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="22"/><path d="M40 24 L35 35 L24 40 L29 29 Z"/><path d="M32 14 V18"/><path d="M32 46 V50"/><path d="M14 32 H18"/><path d="M46 32 H50"/></svg></div>
+        <h3 class="feature-title">成長が見えるコンパス</h3>
+        <p class="feature-desc">踏破ポイントで称号が「見習い → 旅人 → 探検家 → … → 羅針盤」と上がります。ステップ別の充実度から、次に伸ばしたいステップを教えてくれます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 H54"/><path d="M10 34 H54"/><path d="M10 54 H54"/><rect x="14" y="20" width="8" height="14"/><rect x="26" y="22" width="8" height="12"/><rect x="40" y="40" width="8" height="14"/></svg></div>
+        <h3 class="feature-title">学びの棚</h3>
+        <p class="feature-desc">ふりかえりで書いた「次に活かすこと」が棚に並びます。同じ失敗を繰り返さないための、あなただけの地図になります。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="steps">
+    <h2>使い方</h2>
+    <div class="step">
+      <span class="step-num">1</span>
+      <p><strong>Googleでログイン</strong>：記録はあなた専用の領域に保存され、スマホとPCで同じデータを見られます。</p>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <p><strong>問題を1つ登録</strong>：いま気になっている問題を「解決シート」として登録します。仕事でも暮らしでもOKです。</p>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <p><strong>6ステップを順番に</strong>：ガイドに沿って1ステップずつ入力。途中で保存して、あとから続きをやることもできます。</p>
+    </div>
+    <div class="step">
+      <span class="step-num">4</span>
+      <p><strong>ふりかえりまでやって踏破</strong>：結果がどうであれ、ふりかえりを書いたら1件の踏破（+10pt）。学びは学びの棚に並びます。</p>
+    </div>
+    <div class="step">
+      <span class="step-num">5</span>
+      <p><strong>すきま時間は稽古</strong>：毎日のお題で原因と打ち手を考える練習（+2pt）。続けるほど連続日数が伸びます。</p>
+    </div>
+  </section>
+
+  <p class="note">※ ステップ別の充実度は、そのステップまで進んだシートのうち「型どおりに埋まっている」割合です（例：なぜなぜ分析は「なぜ」を3つ以上＋根本原因、打ち手は3つ以上）。</p>
+
+  <section class="footer-cta">
+    <a class="cta" href="https://kaiketsu-compass.vercel.app">今すぐ使ってみる →</a>
+    <p class="footer-links"><a href="https://apps.yuji-nakamura.com/">他のアプリも見る</a></p>
+  </section>
+</body>
+</html>
