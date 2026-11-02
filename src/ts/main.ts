@@ -12,6 +12,9 @@ import { renderStepBody } from './sheet';
 import { diagnose, Diagnosis, FOCUS_DRILLS } from './diagnosis';
 import { DAILY_WORDS, DRILL_PROMPTS, OUTCOMES, POINTS_PER_SHEET, STEPS } from './words';
 import { Drill, IssueKey, Problem, ProblemData } from './types';
+import { initClickTracking } from './analytics';
+
+initClickTracking();
 
 // ============================================================
 // DOM refs
