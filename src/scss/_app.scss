@@ -219,6 +219,193 @@
   margin-left: $spacing-xs;
 }
 
+// ===== 課題カルテ =====
+.karte-wait {
+  &__title {
+    font-weight: 800;
+    font-size: $font-size-base;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__text {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    line-height: 1.7;
+  }
+}
+
+.karte-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.karte-issue {
+  padding: $spacing-md $spacing-lg;
+  border-left: 4px solid $color-primary;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__rank {
+    font-size: $font-size-xs;
+    font-weight: 800;
+    color: $color-primary-ink;
+  }
+
+  &__step {
+    font-size: $font-size-xs;
+    font-weight: 700;
+    color: $color-text-muted;
+    background: $color-surface-2;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  &__level {
+    margin-left: auto;
+    font-size: $font-size-xs;
+    font-weight: 700;
+    color: $color-partial;
+    border: 1px solid currentColor;
+    padding: 1px 8px;
+    border-radius: 999px;
+
+    &.is-high {
+      color: $color-late;
+    }
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: 800;
+    line-height: 1.4;
+    margin: 0 0 $spacing-xs;
+  }
+
+  &__evidence {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $color-text-muted;
+    line-height: 1.6;
+  }
+
+  &__meter {
+    height: 6px;
+    background: $color-surface-2;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: $spacing-sm 0 $spacing-md;
+  }
+
+  &__bar {
+    height: 100%;
+    background: $color-primary;
+    border-radius: 999px;
+  }
+
+  &__advice {
+    font-size: $font-size-sm;
+    line-height: 1.7;
+    margin-bottom: $spacing-md;
+  }
+
+  @media (max-width: $bp-mobile) {
+    padding: $spacing-md;
+  }
+}
+
+.karte-goods {
+  margin-top: $spacing-sm;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  background: rgba($color-primary, 0.08);
+
+  &__title {
+    font-size: $font-size-xs;
+    font-weight: 800;
+    color: $color-primary-ink;
+    margin-bottom: $spacing-xs;
+  }
+
+  li {
+    position: relative;
+    padding-left: 1.3em;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    line-height: 1.7;
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: $color-primary-ink;
+      font-weight: 800;
+    }
+  }
+}
+
+.drill-focus {
+  border: 2px solid $color-primary;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: 800;
+    color: #fff;
+    background: $color-primary;
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+
+  &__name {
+    font-weight: 800;
+  }
+
+  &__point {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    line-height: 1.7;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.step-alert {
+  border-left: 4px solid $color-partial;
+  background: rgba($color-partial, 0.1);
+  border-radius: 0 $radius-md $radius-md 0;
+  padding: $spacing-sm $spacing-md;
+  margin: -#{$spacing-sm} 0 $spacing-lg;
+
+  &__label {
+    display: inline-block;
+    font-size: $font-size-xs;
+    font-weight: 800;
+    color: #8a6a00;
+    margin-bottom: 2px;
+  }
+
+  &__text {
+    font-size: $font-size-sm;
+    line-height: 1.7;
+  }
+}
+
 // ===== Drill =====
 .drill-prompt {
   display: flex;
@@ -284,6 +471,17 @@
     font-size: $font-size-xs;
     color: $color-text-muted;
     font-weight: 600;
+  }
+
+  &__focus {
+    display: inline-block;
+    font-size: $font-size-xs;
+    font-weight: 700;
+    color: $color-primary-ink;
+    background: rgba($color-primary, 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: $spacing-xs;
   }
 
   &__prompt {

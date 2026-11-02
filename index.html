@@ -85,24 +85,41 @@
         </div>
       </section>
 
-      <!-- 今日の稽古 -->
+      <!-- 課題カルテ -->
       <section class="section">
+        <div class="section__head">
+          <h2 class="section__title">課題カルテ</h2>
+          <p class="section__desc">解決シートの記録から、あなたがつまずきやすいところを自動で診断します。使うほど精度が上がります。</p>
+        </div>
+        <div id="karte" class="karte"></div>
+      </section>
+
+      <!-- 今日の稽古 -->
+      <section class="section" id="section-drill">
         <div class="section__head">
           <h2 class="section__title">今日の稽古 <span class="done-badge hidden" id="drill-done-badge">稽古済み</span></h2>
           <p class="section__desc">お題に対して、5分で「原因」と「打ち手」を考える練習です。1回 +2pt。</p>
         </div>
         <form id="drill-form" class="card-surface" novalidate>
+          <div class="drill-focus hidden" id="drill-focus">
+            <div class="drill-focus__head">
+              <span class="drill-focus__label">課題の稽古</span>
+              <span class="drill-focus__name" id="drill-focus-name"></span>
+            </div>
+            <p class="drill-focus__point" id="drill-focus-point"></p>
+            <button type="button" id="btn-drill-focus-clear" class="btn btn--ghost btn--sm">ふだんの稽古に戻す</button>
+          </div>
           <div class="drill-prompt">
             <span class="drill-prompt__label">お題</span>
             <p class="drill-prompt__text" id="drill-prompt"></p>
             <button type="button" id="btn-drill-shuffle" class="btn btn--ghost btn--sm">別のお題</button>
           </div>
           <div class="field">
-            <label class="field__label" for="input-drill-cause">いちばんの原因は？<span class="field__hint">「なぜ？」を何回か繰り返してから書くのがコツ</span></label>
+            <label class="field__label" for="input-drill-cause"><span id="drill-cause-label">いちばんの原因は？</span><span class="field__hint" id="drill-cause-hint">「なぜ？」を何回か繰り返してから書くのがコツ</span></label>
             <textarea id="input-drill-cause" rows="2" maxlength="300" placeholder="例：議題とゴールが事前に決まっていない"></textarea>
           </div>
           <div class="field">
-            <span class="field__label">打ち手<span class="field__hint">1つ以上、最大3つ</span></span>
+            <span class="field__label"><span id="drill-ideas-label">打ち手</span><span class="field__hint" id="drill-ideas-hint">1つ以上、最大3つ</span></span>
             <div class="drill-ideas">
               <input type="text" id="input-drill-idea-1" maxlength="100" placeholder="例：議題とゴールを前日までに共有する" autocomplete="off" aria-label="打ち手1" />
               <input type="text" id="input-drill-idea-2" maxlength="100" placeholder="打ち手2（任意）" autocomplete="off" aria-label="打ち手2" />
@@ -167,6 +184,10 @@
         <p class="step-panel__no" id="step-no"></p>
         <h2 class="step-panel__title" id="step-title"></h2>
         <p class="step-panel__guide" id="step-guide"></p>
+        <div class="step-alert hidden" id="step-alert" role="note">
+          <span class="step-alert__label">あなたの課題</span>
+          <p class="step-alert__text" id="step-alert-text"></p>
+        </div>
         <div id="step-body"></div>
       </section>
       <div class="sheet-nav">

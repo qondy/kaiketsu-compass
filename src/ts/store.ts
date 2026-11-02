@@ -3,6 +3,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { isOutcome } from './words';
+import { isIssueKey } from './diagnosis';
 import { Action, Drill, Idea, Problem, ProblemData, Rating } from './types';
 
 const str = (v: unknown, max = 2000): string => (typeof v === 'string' ? v.slice(0, max) : '');
@@ -114,6 +115,7 @@ export function subscribeDrills(
         prompt: str(data.prompt, 100),
         cause: str(data.cause, 300),
         ideas: arr(data.ideas).slice(0, 3).map((i) => str(i, 100)).filter(Boolean),
+        focus: isIssueKey(data.focus) ? data.focus : null,
         dateKey,
         createdAt,
       });

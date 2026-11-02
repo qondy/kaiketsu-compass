@@ -9,8 +9,9 @@ import {
 } from './store';
 import { calcStats, overdueCount, stepComplete } from './stats';
 import { renderStepBody } from './sheet';
+import { diagnose, Diagnosis, FOCUS_DRILLS } from './diagnosis';
 import { DAILY_WORDS, DRILL_PROMPTS, OUTCOMES, POINTS_PER_SHEET, STEPS } from './words';
-import { Drill, Problem, ProblemData } from './types';
+import { Drill, IssueKey, Problem, ProblemData } from './types';
 
 // ============================================================
 // DOM refs
@@ -38,6 +39,7 @@ const statDrills = $('stat-drills');
 const statStreak = $('stat-streak');
 const stepRatesEl = $('step-rates');
 const statAdvice = $('stat-advice');
+const karteEl = $('karte');
 
 const drillDoneBadge = $('drill-done-badge');
 const drillForm = $<HTMLFormElement>('drill-form');
@@ -49,6 +51,15 @@ const btnDrillSubmit = $<HTMLButtonElement>('btn-drill-submit');
 const drillList = $('drill-list');
 const drillEmpty = $('drill-empty');
 const btnDrillMore = $<HTMLButtonElement>('btn-drill-more');
+const sectionDrill = $('section-drill');
+const drillFocusBox = $('drill-focus');
+const drillFocusName = $('drill-focus-name');
+const drillFocusPoint = $('drill-focus-point');
+const btnDrillFocusClear = $<HTMLButtonElement>('btn-drill-focus-clear');
+const drillCauseLabel = $('drill-cause-label');
+const drillCauseHint = $('drill-cause-hint');
+const drillIdeasLabel = $('drill-ideas-label');
+const drillIdeasHint = $('drill-ideas-hint');
 
 const problemForm = $<HTMLFormElement>('problem-form');
 const inputProblemTitle = $<HTMLInputElement>('input-problem-title');
@@ -68,6 +79,8 @@ const stepperEl = $('stepper');
 const stepNo = $('step-no');
 const stepTitle = $('step-title');
 const stepGuide = $('step-guide');
+const stepAlert = $('step-alert');
+const stepAlertText = $('step-alert-text');
 const stepBody = $('step-body');
 const btnStepPrev = $<HTMLButtonElement>('btn-step-prev');
 const btnStepSave = $<HTMLButtonElement>('btn-step-save');
@@ -103,6 +116,8 @@ interface State {
   drillLimit: number;
   /** 今日のお題からのずらし量（「別のお題」で増える） */
   promptOffset: number;
+  /** 課題カルテの「この課題を稽古する」で選んだ課題（ふだんの稽古は null） */
+  drillFocus: IssueKey | null;
   /** 編集中のシート（スナップショットで上書きしないよう独立したコピーを持つ） */
   draft: Problem | null;
   viewStep: number;
@@ -122,6 +137,7 @@ const state: State = {
   problemFilter: 'active',
   drillLimit: DRILL_PAGE,
   promptOffset: 0,
+  drillFocus: null,
   draft: null,
   viewStep: 0,
   dirty: false,
@@ -186,7 +202,7 @@ function renderBusy(): void {
   btnLeaveSave.disabled = saving;
 }
 
-function renderDashboard(): void {
+function renderDashboard(dx: Diagnosis): void {
   const s = calcStats(state.problems, state.drills);
   dailyWordEl.textContent = DAILY_WORDS[hashString(todayKey()) % DAILY_WORDS.length];
   statPoints.textContent = String(s.points);
@@ -214,7 +230,9 @@ function renderDashboard(): void {
     return row;
   }));
 
-  if (s.weakStep !== null) {
+  if (dx.issues.length) {
+    statAdvice.textContent = `コンパスの指す先：まずは下の課題カルテの課題1（${dx.issues[0].title}）から取り組みましょう。`;
+  } else if (s.weakStep !== null) {
     statAdvice.textContent = `コンパスの指す先：次は「${STEPS[s.weakStep].label}」を丁寧に。${STEPS[s.weakStep].guide.split('。')[0]}。`;
   } else if (state.problems.length) {
     statAdvice.textContent = 'どのステップも型どおり。この調子で次の問題へ進みましょう。';
@@ -225,6 +243,93 @@ function renderDashboard(): void {
 
 function renderDrillForm(): void {
   drillPromptEl.textContent = todayPrompt();
+  const f = state.drillFocus ? FOCUS_DRILLS[state.drillFocus] : null;
+  drillFocusBox.classList.toggle('hidden', !f);
+  drillFocusName.textContent = f ? f.label : '';
+  drillFocusPoint.textContent = f ? f.point : '';
+  drillCauseLabel.textContent = f ? f.causeLabel : 'いちばんの原因は？';
+  drillCauseHint.textContent = f ? '' : '「なぜ？」を何回か繰り返してから書くのがコツ';
+  inputDrillCause.placeholder = f ? f.causePlaceholder : '例：議題とゴールが事前に決まっていない';
+  drillIdeasLabel.textContent = f ? f.ideasLabel : '打ち手';
+  const min = f ? f.minIdeas : 1;
+  drillIdeasHint.textContent = min >= 3 ? '3つすべて' : '1つ以上、最大3つ';
+  inputDrillIdeas[0].placeholder = f ? f.ideasPlaceholder : '例：議題とゴールを前日までに共有する';
+  inputDrillIdeas.slice(1).forEach((inp, i) => {
+    inp.placeholder = `${f ? f.ideasLabel.replace(/（.*）$/, '') : '打ち手'}${i + 2}${min >= 3 ? '' : '（任意）'}`;
+  });
+}
+
+function startFocusDrill(key: IssueKey): void {
+  state.drillFocus = key;
+  renderDrillForm();
+  renderKarte(diagnose(state.problems));
+  sectionDrill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.setTimeout(() => inputDrillCause.focus({ preventScroll: true }), 400);
+}
+
+function renderKarte(dx: Diagnosis): void {
+  if (!state.loaded) {
+    karteEl.replaceChildren();
+    return;
+  }
+  if (!dx.ready) {
+    const card = document.createElement('div');
+    card.className = 'karte-wait card-surface';
+    card.appendChild(textEl('p', 'karte-wait__title', `あと${dx.remain}件で診断できます`));
+    card.appendChild(textEl('p', 'karte-wait__text', '解決シートを「なぜなぜ分析」より先まで進めると、診断が始まります。現状の書き方・「なぜ」の深さ・打ち手の数と選び方・期限・止まりやすいステップなどから、あなたの課題を見つけます。'));
+    karteEl.replaceChildren(card);
+    return;
+  }
+
+  const nodes: HTMLElement[] = [];
+  if (!dx.issues.length) {
+    const ok = document.createElement('div');
+    ok.className = 'karte-wait card-surface';
+    ok.appendChild(textEl('p', 'karte-wait__title', 'いまのところ、大きな課題は見つかっていません'));
+    ok.appendChild(textEl('p', 'karte-wait__text', 'この調子で解決シートを進めましょう。記録が増えると、新しい課題が見つかることもあります。'));
+    nodes.push(ok);
+  }
+
+  const list = document.createElement('ol');
+  list.className = 'karte-list';
+  dx.issues.forEach((issue, i) => {
+    const li = document.createElement('li');
+    li.className = 'karte-issue card-surface';
+    const head = document.createElement('div');
+    head.className = 'karte-issue__head';
+    head.appendChild(textEl('span', 'karte-issue__rank', `課題${i + 1}`));
+    head.appendChild(textEl('span', 'karte-issue__step', `${stepMark(issue.step)} ${STEPS[issue.step].label}`));
+    const high = issue.severity >= 0.5;
+    head.appendChild(textEl('span', `karte-issue__level${high ? ' is-high' : ''}`, high ? '要注意' : '気をつけたい'));
+    li.appendChild(head);
+    li.appendChild(textEl('h3', 'karte-issue__title', issue.title));
+    li.appendChild(textEl('p', 'karte-issue__evidence', issue.evidence));
+    const meter = document.createElement('div');
+    meter.className = 'karte-issue__meter';
+    meter.setAttribute('aria-hidden', 'true');
+    const bar = document.createElement('div');
+    bar.className = 'karte-issue__bar';
+    bar.style.width = `${Math.max(8, Math.round(issue.severity * 100))}%`;
+    meter.appendChild(bar);
+    li.appendChild(meter);
+    li.appendChild(textEl('p', 'karte-issue__advice', issue.advice));
+    const active = state.drillFocus === issue.key;
+    const b = button(active ? '稽古中' : 'この課題を稽古する', `btn btn--sm ${active ? 'btn--ghost' : 'btn--primary'}`, () => startFocusDrill(issue.key));
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+  if (dx.issues.length) nodes.push(list);
+
+  if (dx.goods.length) {
+    const goods = document.createElement('div');
+    goods.className = 'karte-goods';
+    goods.appendChild(textEl('p', 'karte-goods__title', 'できていること'));
+    const ul = document.createElement('ul');
+    dx.goods.forEach((g) => ul.appendChild(textEl('li', '', g)));
+    goods.appendChild(ul);
+    nodes.push(goods);
+  }
+  karteEl.replaceChildren(...nodes);
 }
 
 function renderDrills(): void {
@@ -243,6 +348,7 @@ function renderDrills(): void {
     });
     head.appendChild(del);
     li.appendChild(head);
+    if (d.focus) li.appendChild(textEl('span', 'drill-item__focus', `課題の稽古：${FOCUS_DRILLS[d.focus].label}`));
     li.appendChild(textEl('p', 'drill-item__prompt', d.prompt));
     if (d.cause) li.appendChild(textEl('p', 'drill-item__cause', `原因：${d.cause}`));
     if (d.ideas.length) {
@@ -333,7 +439,9 @@ function renderShelf(): void {
 }
 
 function renderHome(): void {
-  renderDashboard();
+  const dx = diagnose(state.problems);
+  renderDashboard(dx);
+  renderKarte(dx);
   renderDrills();
   renderProblems();
   renderShelf();
@@ -393,6 +501,9 @@ function renderSheet(scrollTop = true): void {
   stepNo.textContent = `STEP ${state.viewStep + 1} / ${STEPS.length}`;
   stepTitle.textContent = step.label;
   stepGuide.textContent = step.guide;
+  const issue = diagnose(state.problems).issues.find((x) => x.step === state.viewStep);
+  stepAlert.classList.toggle('hidden', !issue);
+  stepAlertText.textContent = issue ? `${issue.title}。${issue.advice}` : '';
   renderStepBody(stepBody, d, state.viewStep, onDraftChange);
   renderStepper();
   renderSheetNav();
@@ -478,6 +589,7 @@ function handleUser(user: User | null): void {
   state.problems = [];
   state.drills = [];
   state.loaded = false;
+  state.drillFocus = null;
   state.uid = user?.uid ?? null;
   state.draft = null;
   state.dirty = false;
@@ -568,20 +680,35 @@ drillForm.addEventListener('submit', (e) => {
     inputDrillCause.focus();
     return;
   }
-  if (!ideas.length) {
-    showToast('打ち手を1つ以上書いてみましょう');
-    inputDrillIdeas[0].focus();
+  const focus = state.drillFocus;
+  const f = focus ? FOCUS_DRILLS[focus] : null;
+  if (f?.needsNumber && !/[0-9０-９]/.test(cause)) {
+    showToast('数字を1つ入れてみましょう（例：週3回、平均30分）');
+    inputDrillCause.focus();
+    return;
+  }
+  const minIdeas = f ? f.minIdeas : 1;
+  if (ideas.length < minIdeas) {
+    showToast(minIdeas >= 3 ? '3つすべて埋めてみましょう' : '打ち手を1つ以上書いてみましょう');
+    inputDrillIdeas[Math.min(ideas.length, 2)].focus();
     return;
   }
   const prompt = todayPrompt();
   void withLock('drill', async () => {
-    await createDrill(uid, { prompt, cause, ideas, dateKey: todayKey(), createdAt: Date.now() });
+    await createDrill(uid, { prompt, cause, ideas, focus, dateKey: todayKey(), createdAt: Date.now() });
     inputDrillCause.value = '';
     inputDrillIdeas.forEach((i) => { i.value = ''; });
     state.promptOffset += 1;
+    state.drillFocus = null;
     renderDrillForm();
-    showToast('稽古おつかれさま！ +2pt');
+    showToast(focus ? '課題の稽古おつかれさま！ +2pt' : '稽古おつかれさま！ +2pt');
   });
+});
+
+btnDrillFocusClear.addEventListener('click', () => {
+  state.drillFocus = null;
+  renderDrillForm();
+  renderKarte(diagnose(state.problems));
 });
 
 btnDrillMore.addEventListener('click', () => {

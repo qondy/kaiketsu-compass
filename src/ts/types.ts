@@ -3,6 +3,9 @@ export type Rating = 0 | 1 | 2 | 3;
 export type Outcome = 'solved' | 'partial' | 'unsolved';
 export type ProblemStatus = 'active' | 'done';
 
+/** 課題カルテで診断する課題の種類 */
+export type IssueKey = 'define' | 'shallow' | 'fewIdeas' | 'easyBias' | 'overdue' | 'stall' | 'unsolved' | 'noLesson';
+
 /** ステップ③で出した打ち手 */
 export interface Idea {
   id: string;
@@ -58,6 +61,8 @@ export interface Drill {
   prompt: string;
   cause: string;
   ideas: string[];
+  /** 課題カルテから「この課題を稽古する」で取り組んだ場合の課題（ふだんのお題は null） */
+  focus: IssueKey | null;
   /** 稽古した日（ローカル YYYY-MM-DD） */
   dateKey: string;
   createdAt: number;
