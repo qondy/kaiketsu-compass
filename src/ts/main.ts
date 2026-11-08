@@ -10,8 +10,9 @@ import {
 import { calcStats, overdueCount, stepComplete } from './stats';
 import { renderStepBody } from './sheet';
 import { diagnose, Diagnosis, FOCUS_DRILLS } from './diagnosis';
+import { compareGrowth, doneSheetsAsc, MIN_COMPARE, sheetMetrics } from './history';
 import { DAILY_WORDS, DRILL_PROMPTS, OUTCOMES, POINTS_PER_SHEET, STEPS } from './words';
-import { Drill, IssueKey, Problem, ProblemData } from './types';
+import { Drill, IssueKey, Outcome, Problem, ProblemData } from './types';
 import { initClickTracking } from './analytics';
 
 initClickTracking();
@@ -31,6 +32,16 @@ const btnLogout = $<HTMLButtonElement>('btn-logout');
 
 const viewHome = $('view-home');
 const viewSheet = $('view-sheet');
+const viewHistory = $('view-history');
+const btnOpenHistory = $<HTMLButtonElement>('btn-open-history');
+const historyLinkSub = $('history-link-sub');
+const btnOpenHistoryDone = $<HTMLButtonElement>('btn-open-history-done');
+const btnHistoryBack = $<HTMLButtonElement>('btn-history-back');
+const growthEl = $('growth');
+const historyFilterEl = $('history-filter');
+const historySortEl = $('history-sort');
+const historyList = $('history-list');
+const historyEmpty = $('history-empty');
 
 const dailyWordEl = $('daily-word');
 const statPoints = $('stat-points');
@@ -108,6 +119,8 @@ const btnFeedbackSend = $<HTMLButtonElement>('btn-feedback-send');
 // State
 // ============================================================
 type ProblemFilter = 'active' | 'done';
+type View = 'home' | 'sheet' | 'history';
+type HistoryFilter = 'all' | Outcome;
 
 interface State {
   uid: string | null;
@@ -116,6 +129,11 @@ interface State {
   drills: Drill[];
   loaded: boolean;
   problemFilter: ProblemFilter;
+  view: View;
+  /** シートを閉じたときに戻る画面 */
+  sheetReturn: 'home' | 'history';
+  historyFilter: HistoryFilter;
+  historySort: 'asc' | 'desc';
   drillLimit: number;
   /** 今日のお題からのずらし量（「別のお題」で増える） */
   promptOffset: number;
@@ -138,6 +156,10 @@ const state: State = {
   drills: [],
   loaded: false,
   problemFilter: 'active',
+  view: 'home',
+  sheetReturn: 'home',
+  historyFilter: 'all',
+  historySort: 'asc',
   drillLimit: DRILL_PAGE,
   promptOffset: 0,
   drillFocus: null,
@@ -420,6 +442,10 @@ function renderProblems(): void {
     ? '進行中のシートはありません。いま気になっている問題を1つ登録してみましょう。'
     : 'まだ踏破したシートはありません。ふりかえりまで進めると、ここに並びます。';
   problemEmpty.classList.toggle('hidden', list.length > 0 || !state.loaded);
+  btnOpenHistoryDone.classList.toggle('hidden', state.problemFilter !== 'done' || done.length === 0);
+  historyLinkSub.textContent = done.length
+    ? `踏破 ${done.length}件の一覧と、はじめの頃との比較`
+    : 'ふりかえりまで進めたシートが、ここに記録されていきます';
 }
 
 function renderShelf(): void {
@@ -448,7 +474,148 @@ function renderHome(): void {
   renderDrills();
   renderProblems();
   renderShelf();
+  if (state.view === 'history') renderHistory();
   renderBusy();
+}
+
+// ============================================================
+// Render: 解決の軌跡
+// ============================================================
+const HISTORY_FILTERS: { key: HistoryFilter; label: string }[] = [
+  { key: 'all', label: 'すべて' },
+  ...OUTCOMES.map((o) => ({ key: o.key as HistoryFilter, label: o.label })),
+];
+
+function shortDate(ms: number | null): string {
+  if (!ms) return '';
+  const d = new Date(ms);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function renderGrowth(doneAsc: Problem[]): void {
+  const nodes: HTMLElement[] = [];
+  const growth = compareGrowth(doneAsc);
+  if (!growth) {
+    nodes.push(textEl('h3', 'growth__title', 'はじめの頃と比べる'));
+    const remain = MIN_COMPARE - doneAsc.length;
+    nodes.push(textEl('p', 'growth__text', doneAsc.length
+      ? `あと${remain}件踏破すると、はじめの頃のシートと最近のシートを比べられます。`
+      : `解決シートを${MIN_COMPARE}件踏破すると、はじめの頃と最近を比べられます。まずは1件、ふりかえりまで進めてみましょう。`));
+    const meter = document.createElement('div');
+    meter.className = 'growth__meter';
+    meter.setAttribute('role', 'progressbar');
+    meter.setAttribute('aria-valuemin', '0');
+    meter.setAttribute('aria-valuemax', String(MIN_COMPARE));
+    meter.setAttribute('aria-valuenow', String(doneAsc.length));
+    const bar = document.createElement('div');
+    bar.className = 'growth__bar';
+    bar.style.width = `${(doneAsc.length / MIN_COMPARE) * 100}%`;
+    meter.appendChild(bar);
+    nodes.push(meter, textEl('p', 'growth__count', `${doneAsc.length} / ${MIN_COMPARE}件`));
+    growthEl.replaceChildren(...nodes);
+    return;
+  }
+
+  const n = doneAsc.length;
+  const early = doneAsc.slice(0, growth.size);
+  const recent = doneAsc.slice(-growth.size);
+  nodes.push(textEl('h3', 'growth__title', `はじめの${growth.size}件と、最近の${growth.size}件`));
+  nodes.push(textEl('p', 'growth__period',
+    `No.1〜${growth.size}（${shortDate(early[0].doneAt)}〜${shortDate(early[early.length - 1].doneAt)}） → No.${n - growth.size + 1}〜${n}（${shortDate(recent[0].doneAt)}〜${shortDate(recent[recent.length - 1].doneAt)}）`));
+
+  const head = document.createElement('div');
+  head.className = 'growth-row growth-row--head';
+  head.append(textEl('span', '', ''), textEl('span', '', 'はじめ'), textEl('span', '', '最近'), textEl('span', '', '変化'));
+  const table = document.createElement('div');
+  table.className = 'growth__table';
+  table.appendChild(head);
+  growth.rows.forEach((r) => {
+    const row = document.createElement('div');
+    row.className = `growth-row is-${r.trend}`;
+    row.append(
+      textEl('span', 'growth-row__label', r.label),
+      textEl('span', 'growth-row__before', r.before),
+      textEl('span', 'growth-row__after', r.after),
+      textEl('span', 'growth-row__diff', r.diff),
+    );
+    table.appendChild(row);
+  });
+  nodes.push(table);
+  nodes.push(textEl('p', 'growth__summary', growth.improvedCount
+    ? `${growth.rows.length}項目中 ${growth.improvedCount}項目で、はじめの頃より伸びています。`
+    : 'まだ大きな変化はありません。課題カルテを参考に、型を意識して続けましょう。'));
+  growthEl.replaceChildren(...nodes);
+}
+
+function historyItem(p: Problem, no: number): HTMLElement {
+  const m = sheetMetrics(p);
+  const li = document.createElement('li');
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'history-item card-surface';
+  b.addEventListener('click', () => openSheet(p.id));
+
+  const head = document.createElement('div');
+  head.className = 'history-item__head';
+  head.appendChild(textEl('span', 'history-item__no', `No.${no}`));
+  if (p.doneAt) head.appendChild(textEl('span', 'history-item__date', labelOf(p.doneAt)));
+  const o = OUTCOMES.find((x) => x.key === p.outcome);
+  head.appendChild(textEl('span', `outcome-badge outcome-badge--${p.outcome ?? 'none'}`, o ? o.label : '踏破'));
+  b.appendChild(head);
+  b.appendChild(textEl('p', 'history-item__title', p.title));
+
+  const chips = document.createElement('div');
+  chips.className = 'history-item__chips';
+  [
+    `なぜ ${m.whys}段`,
+    `打ち手 ${m.ideas}個`,
+    `型 ${m.form}/6`,
+    m.days === 0 ? '当日に踏破' : `${m.days}日で踏破`,
+  ].forEach((t) => chips.appendChild(textEl('span', 'history-item__chip', t)));
+  b.appendChild(chips);
+
+  const lesson = p.nextTime.trim() || p.learning.trim();
+  if (lesson) b.appendChild(textEl('p', 'history-item__lesson', `次に活かす：${lesson}`));
+  li.appendChild(b);
+  return li;
+}
+
+function renderHistory(): void {
+  const doneAsc = doneSheetsAsc(state.problems);
+  renderGrowth(doneAsc);
+
+  historyFilterEl.replaceChildren(...HISTORY_FILTERS.map((f) => {
+    const count = f.key === 'all' ? doneAsc.length : doneAsc.filter((p) => p.outcome === f.key).length;
+    const on = state.historyFilter === f.key;
+    const b = button(`${f.label} ${count}`, `tabs__btn${on ? ' is-active' : ''}`, () => {
+      state.historyFilter = f.key;
+      renderHistory();
+    });
+    b.dataset.filter = f.key;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(on));
+    return b;
+  }));
+  historySortEl.querySelectorAll<HTMLButtonElement>('.sort-toggle__btn').forEach((b) => {
+    const on = b.dataset.sort === state.historySort;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+
+  const numbered = doneAsc.map((p, i) => ({ p, no: i + 1 }));
+  const filtered = numbered.filter(({ p }) => state.historyFilter === 'all' || p.outcome === state.historyFilter);
+  if (state.historySort === 'desc') filtered.reverse();
+  historyList.replaceChildren(...filtered.map(({ p, no }) => historyItem(p, no)));
+  historyEmpty.textContent = doneAsc.length
+    ? 'この条件に当てはまるシートはありません。'
+    : 'まだ踏破したシートはありません。解決シートをふりかえりまで進めると、ここに記録が並びます。';
+  historyEmpty.classList.toggle('hidden', filtered.length > 0 || !state.loaded);
+}
+
+function openHistory(): void {
+  state.historyFilter = 'all';
+  showView('history');
+  renderHistory();
 }
 
 // ============================================================
@@ -514,9 +681,11 @@ function renderSheet(scrollTop = true): void {
   if (scrollTop) window.scrollTo({ top: 0 });
 }
 
-function showView(view: 'home' | 'sheet'): void {
+function showView(view: View): void {
+  state.view = view;
   viewHome.classList.toggle('hidden', view !== 'home');
   viewSheet.classList.toggle('hidden', view !== 'sheet');
+  viewHistory.classList.toggle('hidden', view !== 'history');
   window.scrollTo({ top: 0 });
 }
 
@@ -526,6 +695,7 @@ function openSheet(id: string): void {
   state.draft = cloneProblem(p);
   state.viewStep = p.status === 'done' ? STEPS.length - 1 : p.step;
   state.dirty = false;
+  state.sheetReturn = state.view === 'history' ? 'history' : 'home';
   inputSheetTitle.value = p.title;
   showView('sheet');
   renderSheet();
@@ -534,7 +704,7 @@ function openSheet(id: string): void {
 function closeSheet(): void {
   state.draft = null;
   state.dirty = false;
-  showView('home');
+  showView(state.sheetReturn);
   renderHome();
 }
 
@@ -751,6 +921,24 @@ problemTabs.addEventListener('click', (e) => {
   if (filter !== 'active' && filter !== 'done') return;
   state.problemFilter = filter;
   renderProblems();
+});
+
+// ============================================================
+// Events: 解決の軌跡
+// ============================================================
+btnOpenHistory.addEventListener('click', openHistory);
+btnOpenHistoryDone.addEventListener('click', openHistory);
+btnHistoryBack.addEventListener('click', () => {
+  showView('home');
+  renderHome();
+});
+
+historySortEl.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.sort-toggle__btn');
+  const sort = btn?.dataset.sort;
+  if (sort !== 'asc' && sort !== 'desc') return;
+  state.historySort = sort;
+  renderHistory();
 });
 
 // ============================================================

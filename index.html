@@ -88,6 +88,10 @@
             <div class="stat"><span class="stat__num" id="stat-drills">0</span><span class="stat__label">稽古した回数</span></div>
             <div class="stat"><span class="stat__num" id="stat-streak">0</span><span class="stat__label">日連続の稽古</span></div>
           </div>
+          <button type="button" id="btn-open-history" class="history-link">
+            <span class="history-link__text">解決の軌跡を見る<small id="history-link-sub">これまでに踏破したシートの一覧と、はじめの頃との比較</small></span>
+            <span class="history-link__arrow" aria-hidden="true">→</span>
+          </button>
           <h3 class="dashboard__sub">ステップ別の充実度</h3>
           <div class="step-rates" id="step-rates"></div>
           <p class="dashboard__advice" id="stat-advice"></p>
@@ -153,6 +157,7 @@
           <button type="button" class="tabs__btn is-active" data-filter="active">進行中 <span id="count-active">0</span></button>
           <button type="button" class="tabs__btn" data-filter="done">踏破済み <span id="count-done">0</span></button>
         </div>
+        <button type="button" id="btn-open-history-done" class="btn btn--ghost btn--block history-done-link hidden">解決の軌跡で、はじめの頃と比べる →</button>
         <div id="problem-list" class="problem-list"></div>
         <div id="problem-empty" class="empty-state card-surface hidden"></div>
       </section>
@@ -204,6 +209,33 @@
         <button type="button" id="btn-step-save" class="btn btn--ghost">保存</button>
         <button type="button" id="btn-step-next" class="btn btn--primary">保存して次へ →</button>
       </div>
+    </main>
+
+    <!-- ===== 解決の軌跡 ===== -->
+    <main id="view-history" class="app-main hidden">
+      <div class="sheet-top">
+        <button type="button" id="btn-history-back" class="btn btn--ghost btn--sm">← ホームに戻る</button>
+      </div>
+      <div class="section__head">
+        <h2 class="history-title">解決の軌跡</h2>
+        <p class="section__desc">これまでに踏破した解決シートの記録です。始めたばかりの頃の自分と、今の自分を比べてみましょう。</p>
+      </div>
+
+      <section class="section">
+        <div id="growth" class="growth card-surface"></div>
+      </section>
+
+      <section class="section">
+        <div class="history-controls">
+          <div class="tabs history-filter" id="history-filter" role="tablist" aria-label="結果で絞り込む"></div>
+          <div class="sort-toggle" id="history-sort" role="group" aria-label="並び順">
+            <button type="button" class="sort-toggle__btn is-active" data-sort="asc" aria-pressed="true">古い順</button>
+            <button type="button" class="sort-toggle__btn" data-sort="desc" aria-pressed="false">新しい順</button>
+          </div>
+        </div>
+        <ol id="history-list" class="history-list"></ol>
+        <div id="history-empty" class="empty-state card-surface hidden"></div>
+      </section>
     </main>
 
     <footer class="footer">
